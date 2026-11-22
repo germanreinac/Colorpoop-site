@@ -14,7 +14,7 @@
   --ease:cubic-bezier(.2,.7,.2,1);
 }
 *{box-sizing:border-box}
-html,body{height:100%}
+html,body{height:100%;overscroll-behavior:none}
 body{
   margin:0;position:fixed;inset:0;overflow:hidden;
   background:var(--bg);color:var(--ink);
@@ -42,7 +42,7 @@ a{color:inherit}
 body[data-state="sec"] #pc{z-index:6}
 
 /* home: brand cover up top, a page to scribble on, and a pile of stickers to throw around */
-#home{position:fixed;inset:0;z-index:3;overflow:hidden}
+#home{position:fixed;inset:0;z-index:3;overflow:hidden;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 body[data-state="sec"] #home{display:none}
 #pad{position:absolute;inset:0;touch-action:none;cursor:crosshair}
 #brand{position:absolute;top:clamp(18px,3vw,40px);left:clamp(18px,3vw,40px);width:min(34ch,calc(100vw - 36px));pointer-events:none}
@@ -56,14 +56,15 @@ body[data-state="sec"] #home{display:none}
 .hint i{font-style:normal;animation:blink 1s steps(1) infinite}
 @keyframes blink{50%{opacity:0}}
 #flush{pointer-events:auto;border:1.5px solid var(--line);padding:5px 10px 4px;color:var(--ink)}
-#flush:hover{background:var(--ink);color:var(--bg)}
+@media (hover:hover){#flush:hover{background:var(--ink);color:var(--bg)}}
+#flush:active{background:var(--ink);color:var(--bg)}
 #serious{position:absolute;right:clamp(18px,3vw,40px);top:clamp(22px,3.2vw,44px);margin:0;pointer-events:none}
 
 #pile{position:absolute;inset:0;pointer-events:none}
 .stk{
   position:absolute;left:0;top:0;width:var(--d,180px);height:var(--d,180px);pointer-events:auto;
   display:block;text-decoration:none;border-radius:50%;cursor:grab;will-change:transform;
-  user-select:none;-webkit-user-select:none;touch-action:none;-webkit-tap-highlight-color:transparent;
+  user-select:none;-webkit-user-select:none;touch-action:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;
 }
 .stk.held{cursor:grabbing;z-index:5}
 /* flat discs in the two brand colours: number, name, arrow. The pixel artwork shows on hover or grab. */
@@ -88,25 +89,29 @@ body[data-state="sec"] #home{display:none}
 }
 .stk b{top:13%}
 .stk i{bottom:11%;font-family:var(--sans);font-size:calc(var(--d) * .1)}
-.stk:hover .disc,.stk:focus-visible .disc{transform:scale(1.06) rotate(-4deg)}
+.stk.hov .disc,.stk:focus-visible .disc{transform:scale(1.06) rotate(-4deg)}
 .stk.held .disc{transform:scale(1.1)}
-.stk:hover .disc,.stk:focus-visible .disc,.stk.held .disc{background:#f6e2fc;color:var(--blue)}
-.stk:hover img,.stk:focus-visible img,.stk.held img{opacity:1}
-.stk:hover .nm,.stk:focus-visible .nm,.stk.held .nm{background:var(--blue);color:#f6e2fc;transform:translateY(calc(var(--d) * .27)) scale(.8)}
-.stk:hover b,.stk:hover i,.stk.held b,.stk.held i{opacity:0}
+.stk.hov .disc,.stk:focus-visible .disc,.stk.held .disc{background:#f6e2fc;color:var(--blue)}
+.stk.hov img,.stk:focus-visible img,.stk.held img{opacity:1}
+.stk.hov .nm,.stk:focus-visible .nm,.stk.held .nm{background:var(--blue);color:#f6e2fc;transform:translateY(calc(var(--d) * .27)) scale(.8)}
+.stk.hov b,.stk.hov i,.stk.held b,.stk.held i{opacity:0}
 /* without scripting or motion the stickers just sit in a row along the bottom */
 .static #pile{inset:auto 0 clamp(18px,3vw,40px) 0;display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:18px;padding:0 18px}
 .static .stk{position:relative;--d:clamp(96px,15vw,190px)}
 
 /* corner controls */
 #mark{
-  position:fixed;z-index:8;top:clamp(16px,2.6vw,34px);left:clamp(18px,3vw,40px);
-  width:62px;height:40px;background:var(--accent);
+  position:fixed;z-index:8;top:clamp(12px,2.2vw,30px);left:clamp(12px,2.6vw,36px);
+  padding:6px 8px;border-radius:999px;display:block;
+  opacity:0;pointer-events:none;transition:opacity .4s,transform .3s var(--ease);
+}
+#mark span{
+  display:block;width:62px;height:40px;background:var(--accent);
   -webkit-mask:url(assets/img/mark.png) center/contain no-repeat;mask:url(assets/img/mark.png) center/contain no-repeat;
-  opacity:0;pointer-events:none;transition:opacity .4s,transform .3s var(--ease),background .6s;
 }
 body[data-state="sec"] #mark{opacity:1;pointer-events:auto}
-#mark:hover{transform:rotate(-8deg) scale(1.08)}
+@media (hover:hover){#mark:hover{transform:rotate(-8deg) scale(1.08)}}
+
 /* sections */
 .sec{
   position:fixed;inset:0;z-index:4;display:none;overflow-y:auto;overscroll-behavior:contain;
@@ -152,7 +157,9 @@ body.no-fx .sec h2{color:var(--accent)}
   #brand .pitch{margin-top:1.1em}
   .hint{margin-top:1.1em}
   #serious{display:none}
-  #mark{width:50px;height:32px}
+  #mark{background:rgba(246,226,252,.92);box-shadow:0 0 0 1.5px var(--blue)}
+  #mark span{width:40px;height:26px}
+  .inner{padding-top:76px}
   .trio{gap:8px}
 }
 @media (prefers-reduced-motion:reduce){

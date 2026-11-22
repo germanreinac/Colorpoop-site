@@ -126,9 +126,13 @@
   let topZ = 1;
   bodies.forEach(b => {
     const el = b.el;
-    let moved = false, sx = 0, sy = 0, gx = 0, gy = 0, px = 0, py = 0;
+    let moved = false, slop = 6, sx = 0, sy = 0, gx = 0, gy = 0, px = 0, py = 0;
+    el.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') el.classList.add('hov'); });
+    el.addEventListener('pointerleave', () => el.classList.remove('hov'));
+    el.addEventListener('contextmenu', e => e.preventDefault());
     el.addEventListener('pointerdown', e => {
       if (!physics || e.button) return;
+      slop = e.pointerType === 'mouse' ? 6 : 16;
       b.held = true; moved = false; sx = px = e.clientX; sy = py = e.clientY; gx = b.x - sx; gy = b.y - sy;
       b.vx = b.vy = 0;
       el.style.zIndex = ++topZ; el.classList.add('held');
@@ -136,7 +140,7 @@
     });
     el.addEventListener('pointermove', e => {
       if (!b.held) return;
-      if (!moved && Math.hypot(e.clientX - sx, e.clientY - sy) > 6) moved = true;
+      if (!moved && Math.hypot(e.clientX - sx, e.clientY - sy) > slop) moved = true;
       b.x = Math.min(Math.max(e.clientX + gx, b.r), innerWidth - b.r);
       b.y = Math.min(e.clientY + gy, floorY - b.r);
       b.vx = b.vx * .5 + (e.clientX - px) * .5; b.vy = b.vy * .5 + (e.clientY - py) * .5;
@@ -149,9 +153,14 @@
       const sp = Math.hypot(b.vx, b.vy), max = 42;
       if (sp > max) { b.vx *= max / sp; b.vy *= max / sp; }
     };
-    el.addEventListener('pointerup', end);
+    el.addEventListener('pointerup', e => {
+      const tap = b.held && !moved;
+      end();
+      if (tap) { e.preventDefault(); location.hash = el.hash; }
+    });
     el.addEventListener('pointercancel', end);
-    el.addEventListener('click', e => { if (moved) { e.preventDefault(); moved = false; } });
+    // pointer taps are handled above; only keyboard activation goes through click
+    el.addEventListener('click', e => { if (physics && e.detail !== 0) e.preventDefault(); });
     el.addEventListener('dragstart', e => e.preventDefault());
   });
 
@@ -212,7 +221,7 @@
     W = innerWidth; H = innerHeight;
     pc.width = Math.round(W * DPR); pc.height = Math.round(H * DPR);
     const n = Math.round(Math.min(30000, Math.max(9000, W * H / 44)));
-    if (n !== N) {
+    if (!N || Math.abs(n - N) / N > .3) {
       N = n; CAP = Math.floor(N * .9);
       X = new Float32Array(N); Y = new Float32Array(N); VX = new Float32Array(N); VY = new Float32Array(N);
       TX = new Float32Array(N); TY = new Float32Array(N); SEED = new Float32Array(N);
@@ -338,6 +347,7 @@
     if (physics && state === 'home') stepBodies();
     if (!ctx || !N) return;
     const cols = COLORS, K = cols.length;
+    if (state === 'sec' && current) scrollOff = activeSec().scrollTop;
     const px = ptr.x, py = ptr.y + scrollOff, R = 86, R2 = R * R;
     const jit = reduce ? 0 : state === 'sec' ? .26 : .34;
     const push = !drawing;
