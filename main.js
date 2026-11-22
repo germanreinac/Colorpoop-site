@@ -1,31 +1,23 @@
-/* Colorpoop — a page you can scribble on, a desktop of windows, hash-routed sections. No dependencies. */
+/* Colorpoop — a page you can scribble on, a pile of stickers to throw, hash-routed sections. No dependencies. */
 (() => {
   const body = document.body;
   const pc = document.getElementById('pc');
   const film = document.getElementById('film');
   const pad = document.getElementById('pad');
   const ctx = pc.getContext && pc.getContext('2d');
-  const wins = [...document.querySelectorAll('.win')];
-  const lights = document.getElementById('lights');
+  const stickers = [...document.querySelectorAll('.stk')];
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const SECTIONS = wins.map(a => a.hash.slice(1));
+  const SECTIONS = stickers.map(a => a.hash.slice(1));
 
-  const PALETTE = {
-    dark: ['#ff7fd0', '#b9a3ff', '#8ff0c8', '#ffe36b', '#6f7bff', '#fff4fb'],
-    light: ['#1c27e6', '#2330f0', '#3a45ff', '#1c27e6', '#5a2be0', '#2330f0'],
-  };
-  const FILM = {
-    dark: { base: [10, 6, 18], blobs: [[58, 34, 150], [120, 36, 120], [24, 30, 150], [40, 90, 110]], gain: .55 },
-    light: { base: [246, 214, 246], blobs: [[176, 160, 255], [255, 196, 236], [196, 176, 255], [214, 226, 255]], gain: .9 },
-  };
+  const COLORS = ['#1c27e6', '#2330f0', '#3a45ff', '#1c27e6', '#ff4fc0', '#2330f0'];
+  const FILM = { base: [246, 214, 246], blobs: [[176, 160, 255], [255, 196, 236], [196, 176, 255], [214, 226, 255]], gain: .9 };
 
   let W = 0, H = 0, DPR = 1, N = 0, M = 0, CAP = 0, head = 0;
   let X, Y, VX, VY, TX, TY, SEED;
   let state = 'home', current = null, scrollOff = 0, dustA = .4;
-  let mode = 'dark', drawing = false, seeded = false;
+  let drawing = false, seeded = false;
   const ptr = { x: -9999, y: -9999 };
 
-  try { if (localStorage.getItem('cp-lights') === 'on') setMode('light'); } catch (e) {}
   if (!ctx) body.classList.add('no-fx');
 
   /* ---------- routing ---------- */
@@ -43,7 +35,7 @@
     });
     document.title = current ? `${activeSec().querySelector('h2').textContent} — Colorpoop` : 'Colorpoop';
     if (state === 'sec') { retarget(); activeSec().focus({ preventScroll: true }); }
-    else if (was === 'sec') { release(); seedDoodle(); }
+    else if (was === 'sec') { release(); seedDoodle(); drop(); }
   }
   const activeSec = () => document.getElementById('sec-' + current);
   const goHome = () => { history.pushState(null, '', location.pathname + location.search); route(); };
@@ -57,45 +49,110 @@
     s.addEventListener('scroll', () => { if (s.id === 'sec-' + current) scrollOff = s.scrollTop; }, { passive: true });
   });
 
-  /* ---------- lights ---------- */
-  function setMode(m) {
-    mode = m;
-    body.classList.toggle('light', m === 'light');
-    lights.setAttribute('aria-pressed', String(m === 'light'));
-    const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.content = m === 'light' ? '#efd3f6' : '#0a0612';
-  }
-  lights.addEventListener('click', () => {
-    setMode(mode === 'dark' ? 'light' : 'dark');
-    try { localStorage.setItem('cp-lights', mode === 'light' ? 'on' : 'off'); } catch (e) {}
-    drawFilm(performance.now(), true);
-  });
+  /* ---------- the menu: stickers that fall in, pile up, and can be grabbed and thrown ---------- */
+  const SIZE = [1.25, 1.05, .9, 1, .82];
+  const bodies = stickers.map((el, i) => ({ el, i, x: 0, y: 0, vx: 0, vy: 0, a: 0, va: 0, r: 60, held: false, floor: false }));
+  const physics = !reduce && !!ctx;
+  if (!physics) body.classList.add('static');
+  let floorY = 0;
 
-  /* ---------- desktop windows: drag them around, click to open ---------- */
+  function sizeBodies() {
+    if (!physics) return;
+    const w = innerWidth, h = innerHeight;
+    const base = w < 720 ? Math.min(w * .17, h * .1) : Math.min(w * .085, h * .15);
+    floorY = h - Math.max(14, w * .012);
+    bodies.forEach(b => {
+      b.r = base * SIZE[b.i];
+      b.el.style.setProperty('--d', b.r * 2 + 'px');
+      b.x = Math.min(Math.max(b.x, b.r), w - b.r);
+    });
+  }
+  function drop() {
+    if (!physics) return;
+    const w = innerWidth, order = bodies.slice().sort(() => Math.random() - .5);
+    order.forEach((b, k) => {
+      b.x = w * (.14 + .72 * (k + Math.random() * .6) / order.length);
+      b.y = -b.r - 40 - k * (b.r * 1.6 + 60);
+      b.vx = (Math.random() - .5) * 5; b.vy = 0; b.a = (Math.random() - .5) * 1.2; b.va = (Math.random() - .5) * .12;
+      b.held = false;
+    });
+  }
+  function stepBodies() {
+    const w = innerWidth, SUB = 2;
+    for (let s = 0; s < SUB; s++) {
+      for (const b of bodies) {
+        b.floor = false;
+        if (b.held) continue;
+        b.vy += .42 / SUB * 1.6;
+        b.x += b.vx / SUB; b.y += b.vy / SUB;
+        if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx) * .5; }
+        else if (b.x > w - b.r) { b.x = w - b.r; b.vx = -Math.abs(b.vx) * .5; }
+        if (b.y > floorY - b.r) {
+          b.y = floorY - b.r; b.floor = true;
+          b.vy = b.vy > 2.4 ? -b.vy * .38 : 0;
+          b.vx *= .985;
+        }
+      }
+      for (let i = 0; i < bodies.length; i++) for (let k = i + 1; k < bodies.length; k++) {
+        const p = bodies[i], q = bodies[k];
+        const dx = q.x - p.x, dy = q.y - p.y, min = p.r + q.r, d2 = dx * dx + dy * dy;
+        if (d2 >= min * min || d2 < .0001) continue;
+        const d = Math.sqrt(d2), nx = dx / d, ny = dy / d, over = min - d;
+        const mp = p.held ? 0 : 1 / (p.r * p.r), mq = q.held ? 0 : 1 / (q.r * q.r), sum = mp + mq;
+        if (!sum) continue;
+        p.x -= nx * over * mp / sum; p.y -= ny * over * mp / sum;
+        q.x += nx * over * mq / sum; q.y += ny * over * mq / sum;
+        const rel = (q.vx - p.vx) * nx + (q.vy - p.vy) * ny;
+        if (rel < 0) {
+          const imp = -(1.35) * rel / sum;
+          p.vx -= imp * mp * nx; p.vy -= imp * mp * ny;
+          q.vx += imp * mq * nx; q.vy += imp * mq * ny;
+          // glancing hits make them spin
+          const tang = (q.vx - p.vx) * -ny + (q.vy - p.vy) * nx;
+          if (!p.held) p.va += tang * .0012; if (!q.held) q.va -= tang * .0012;
+        }
+      }
+    }
+    for (const b of bodies) {
+      if (!b.held) {
+        // roll along the floor, and always wobble back upright so the label stays readable
+        if (b.floor) b.va += (b.vx / b.r - b.va) * .12;
+        b.va += -b.a * .012; b.va *= .965; b.a += b.va;
+        if (b.y < -3000) { b.y = -b.r; b.vy = 0; }
+      }
+      b.el.style.transform = `translate3d(${(b.x - b.r).toFixed(1)}px,${(b.y - b.r).toFixed(1)}px,0) rotate(${b.a.toFixed(3)}rad)`;
+    }
+  }
   let topZ = 1;
-  wins.forEach(win => {
-    let down = false, moved = false, sx = 0, sy = 0, ox = 0, oy = 0;
-    win.addEventListener('pointerdown', e => {
-      win.style.zIndex = ++topZ;
-      if (e.pointerType !== 'mouse' || e.button !== 0) return;
-      down = true; moved = false; sx = e.clientX; sy = e.clientY;
-      ox = parseFloat(win.style.getPropertyValue('--dx')) || 0;
-      oy = parseFloat(win.style.getPropertyValue('--dy')) || 0;
-      win.setPointerCapture(e.pointerId);
+  bodies.forEach(b => {
+    const el = b.el;
+    let moved = false, sx = 0, sy = 0, gx = 0, gy = 0, px = 0, py = 0;
+    el.addEventListener('pointerdown', e => {
+      if (!physics || e.button) return;
+      b.held = true; moved = false; sx = px = e.clientX; sy = py = e.clientY; gx = b.x - sx; gy = b.y - sy;
+      b.vx = b.vy = 0;
+      el.style.zIndex = ++topZ; el.classList.add('held');
+      el.setPointerCapture(e.pointerId);
     });
-    win.addEventListener('pointermove', e => {
-      if (!down) return;
-      const dx = e.clientX - sx, dy = e.clientY - sy;
-      if (!moved && Math.hypot(dx, dy) < 5) return;
-      moved = true; win.classList.add('drag');
-      win.style.setProperty('--dx', ox + dx + 'px');
-      win.style.setProperty('--dy', oy + dy + 'px');
+    el.addEventListener('pointermove', e => {
+      if (!b.held) return;
+      if (!moved && Math.hypot(e.clientX - sx, e.clientY - sy) > 6) moved = true;
+      b.x = Math.min(Math.max(e.clientX + gx, b.r), innerWidth - b.r);
+      b.y = Math.min(e.clientY + gy, floorY - b.r);
+      b.vx = b.vx * .5 + (e.clientX - px) * .5; b.vy = b.vy * .5 + (e.clientY - py) * .5;
+      b.va += (e.clientX - px) * .0006;
+      px = e.clientX; py = e.clientY;
     });
-    const end = () => { down = false; win.classList.remove('drag'); };
-    win.addEventListener('pointerup', end);
-    win.addEventListener('pointercancel', end);
-    win.addEventListener('click', e => { if (moved) { e.preventDefault(); moved = false; } });
-    win.addEventListener('dragstart', e => e.preventDefault());
+    const end = () => {
+      if (!b.held) return;
+      b.held = false; el.classList.remove('held');
+      const sp = Math.hypot(b.vx, b.vy), max = 42;
+      if (sp > max) { b.vx *= max / sp; b.vy *= max / sp; }
+    };
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', end);
+    el.addEventListener('click', e => { if (moved) { e.preventDefault(); moved = false; } });
+    el.addEventListener('dragstart', e => e.preventDefault());
   });
 
   /* ---------- drag-to-scroll photo strips ---------- */
@@ -126,7 +183,7 @@
   function drawFilm(t, force) {
     if (!fctx || (!force && t - lastFilm < 90)) return;
     lastFilm = t;
-    const f = FILM[mode], w = film.width, h = film.height;
+    const f = FILM, w = film.width, h = film.height;
     const img = fctx.createImageData(w, h), d = img.data, s = t * .00012;
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
       let r = f.base[0], g = f.base[1], b = f.base[2];
@@ -139,7 +196,7 @@
         const c = f.blobs[k];
         r += (c[0] - r) * a; g += (c[1] - g) * a; b += (c[2] - b) * a;
       }
-      const n = (hash(x * 7 + y * 131 + Math.floor(t / 420) * 17) - .5) * (mode === 'dark' ? 14 : 12);
+      const n = (hash(x * 7 + y * 131 + Math.floor(t / 420) * 17) - .5) * 12;
       const i = (y * w + x) * 4;
       d[i] = r + n; d[i + 1] = g + n; d[i + 2] = b + n; d[i + 3] = 255;
     }
@@ -149,12 +206,12 @@
 
   /* ---------- particles: dust that becomes your drawing, then the section title ---------- */
   function resize() {
-    sizeFilm(); drawFilm(performance.now(), true);
+    sizeFilm(); drawFilm(performance.now(), true); sizeBodies();
     if (!ctx) return;
     DPR = Math.min(devicePixelRatio || 1, 2);
     W = innerWidth; H = innerHeight;
     pc.width = Math.round(W * DPR); pc.height = Math.round(H * DPR);
-    const n = Math.round(Math.min(12000, Math.max(3500, W * H / 95)));
+    const n = Math.round(Math.min(30000, Math.max(9000, W * H / 44)));
     if (n !== N) {
       N = n; CAP = Math.floor(N * .9);
       X = new Float32Array(N); Y = new Float32Array(N); VX = new Float32Array(N); VY = new Float32Array(N);
@@ -198,7 +255,7 @@
     if (!ctx || seeded || state !== 'home' || !N) return;
     seeded = true;
     const small = W < 720;
-    const cx = small ? W * .5 : W * .2, by = small ? H * .56 : H * .56, s = small ? Math.min(W, H) * .0011 : Math.min(W, H) * .0013;
+    const cx = small ? W * .5 : W * .66, by = small ? H * .56 : H * .4, s = small ? Math.min(W, H) * .0011 : Math.min(W, H) * .0013;
     let px, py;
     for (let k = 0; k <= 150; k++) {
       const t = k / 150, a = t * Math.PI * 5.5 + Math.PI, rx = (96 - 84 * t) * s * 1.25;
@@ -278,8 +335,9 @@
     requestAnimationFrame(frame);
     if (document.hidden) return;
     if (!reduce) drawFilm(t);
+    if (physics && state === 'home') stepBodies();
     if (!ctx || !N) return;
-    const cols = PALETTE[mode], K = cols.length;
+    const cols = COLORS, K = cols.length;
     const px = ptr.x, py = ptr.y + scrollOff, R = 86, R2 = R * R;
     const jit = reduce ? 0 : state === 'sec' ? .26 : .34;
     const push = !drawing;
@@ -305,7 +363,7 @@
         if (Y[i] < -4) Y[i] += H + 8; else if (Y[i] > H + 4) Y[i] -= H + 8;
       }
     }
-    dustA += ((state === 'sec' ? 0 : (mode === 'dark' ? .42 : .5)) - dustA) * .06;
+    dustA += ((state === 'sec' ? 0 : .5) - dustA) * .06;
 
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     ctx.clearRect(0, 0, W, H);
@@ -319,7 +377,7 @@
       ctx.globalAlpha = dustA;
       for (let k = 0; k < K; k++) {
         ctx.fillStyle = cols[k];
-        for (let i = M + k; i < N; i += K) ctx.fillRect(X[i], Y[i], sz, sz);
+        for (let i = M + k; i < N; i += K * 2) ctx.fillRect(X[i], Y[i], sz, sz);
       }
     }
   }
@@ -334,6 +392,7 @@
 
   /* ---------- boot ---------- */
   resize();
+  drop();
   route();
   requestAnimationFrame(frame);
   if (document.fonts && document.fonts.ready) {
