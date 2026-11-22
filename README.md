@@ -17,7 +17,7 @@ Then open http://localhost:8000.
 
 ## Editing
 
-- Add a section: add an `<a class="stk" href="#name">` inside `#pile` (with a square image), a matching `<section class="sec" id="sec-name">`, and a size for it in `SIZE` in `main.js`.
+- Add a section: add an `<a class="stk solid">` or `<a class="stk line">` inside `#pile` (copy an existing one; the image is a 1-bit blue PNG), a matching `<section class="sec" id="sec-name">`, and a size for it in `SIZE` in `main.js`.
 - Swap images: replace files in `assets/img/` or edit the `<figure>` entries in a `.strip`.
 - Not yet wired up: social links, contact email and a shop / mailing list.
 
