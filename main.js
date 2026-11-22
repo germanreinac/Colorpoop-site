@@ -211,7 +211,7 @@
     DPR = Math.min(devicePixelRatio || 1, 2);
     W = innerWidth; H = innerHeight;
     pc.width = Math.round(W * DPR); pc.height = Math.round(H * DPR);
-    const n = Math.round(Math.min(12000, Math.max(3500, W * H / 95)));
+    const n = Math.round(Math.min(30000, Math.max(9000, W * H / 44)));
     if (n !== N) {
       N = n; CAP = Math.floor(N * .9);
       X = new Float32Array(N); Y = new Float32Array(N); VX = new Float32Array(N); VY = new Float32Array(N);
@@ -377,7 +377,7 @@
       ctx.globalAlpha = dustA;
       for (let k = 0; k < K; k++) {
         ctx.fillStyle = cols[k];
-        for (let i = M + k; i < N; i += K) ctx.fillRect(X[i], Y[i], sz, sz);
+        for (let i = M + k; i < N; i += K * 2) ctx.fillRect(X[i], Y[i], sz, sz);
       }
     }
   }
