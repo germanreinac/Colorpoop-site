@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Colorpoop</title>
+  <meta name="description" content="Colorpoop exists to unleash weird, raw creativity into the world. One stupid drawing at a time.">
+  <meta name="theme-color" content="#0a0612">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Colorpoop">
+  <meta property="og:description" content="Stay Creative, Stay Weird. Deadly serious art: comics, animation, clothing, art toys and prints.">
+  <meta property="og:image" content="assets/img/luck.jpg">
+  <link rel="icon" type="image/png" href="assets/img/favicon.png">
+  <link rel="preload" as="image" href="assets/img/wordmark.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Space+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <noscript><style>
+    html,body{height:auto}
+    body{position:static;overflow:auto}
+    #film,#grain,#pc,#words,#mark,#lights,#tag{display:none}
+    #logo{position:static;display:block;margin:16vh auto 12vh;pointer-events:none}
+    #logo img{opacity:1}
+    .sec{position:static;display:block;opacity:1;overflow:visible;background:none}
+    .sec h2{color:var(--pink)}
+  </style></noscript>
+</head>
+<body data-state="rest">
+<canvas id="film" aria-hidden="true"></canvas>
+<div id="grain" aria-hidden="true"></div>
+
+<button id="logo" aria-label="Open the menu"><img src="assets/img/wordmark.png" alt="Colorpoop" width="793" height="115"></button>
+<p id="tag" aria-hidden="true"><span>Stay Creative, Stay Weird.</span><span>Deadly Serious Art</span></p>
+
+<a id="mark" href="#menu" aria-label="Back to the menu"></a>
+
+<nav id="words" aria-label="Main">
+  <a href="#colorpoop"><span>Colorpoop</span></a>
+  <a href="#stories"><span>Stories</span></a>
+  <a href="#goods"><span>Goods</span></a>
+  <a href="#drop"><span>Drop I</span></a>
+  <a href="#ra"><span>Ra</span></a>
+</nav>
+
+<button id="lights" type="button" aria-pressed="false"><i aria-hidden="true"></i><span>Lights</span></button>
+
+<canvas id="pc" aria-hidden="true"></canvas>
+
+<main>
+<section class="sec" id="sec-colorpoop"><div class="inner">
+  <h2>Colorpoop</h2>
+  <p>Colorpoop exists to unleash weird, raw creativity into the world. One stupid drawing at a time.</p>
+  <p>It is a world before it is a brand: stories told through comics, animation and illustration, and product drops that let you step in and go deeper.</p>
+  <div class="strip">
+    <figure><img src="assets/img/luck.jpg" alt="A pink character kneeling, first empty-handed, then holding a giant Colorpoop pencil" loading="lazy" decoding="async"><figcaption>Make your own luck.</figcaption></figure>
+    <figure><img src="assets/img/chaos.jpg" alt="Collage of Colorpoop sketches, 3D models, stickers and toys" loading="lazy" decoding="async"><figcaption>Chaos_</figcaption></figure>
+    <figure><img src="assets/img/figure.jpg" alt="3D printed figure climbing out of a cup" loading="lazy" decoding="async"><figcaption>How it started_ a 3D printed figure testing one of the designs.</figcaption></figure>
+  </div>
+  <p class="dim">Stay Creative, Stay Weird.</p>
+  <p class="foot">Deadly Serious Art<span class="sep">·</span>©2026</p>
+</div></section>
+
+<section class="sec" id="sec-stories"><div class="inner">
+  <h2>Stories</h2>
+  <p>Comic / Animation / Illustration. The storytelling keeps expanding, with more characters, more designs, and ads that add to the worldbuilding instead of interrupting it.</p>
+  <p>In a dull world don’t let anyone hush your weirdness. Trust your insides. Put yourself out there.</p>
+  <div class="strip">
+    <figure><img src="assets/img/world.jpg" alt="Greyscale concept of a giant glowing Colorpoop sign over a city" loading="lazy" decoding="async"><figcaption>Visual direction_ cartoon 3D with a moody vibe.</figcaption></figure>
+    <figure><img src="assets/img/anim-2.jpg" alt="Animation layout of a character running" loading="lazy" decoding="async"><figcaption>2D animation_ Stay Creative, shot 03.</figcaption></figure>
+    <figure><img src="assets/img/anim-1.jpg" alt="Animation layout, triple shot" loading="lazy" decoding="async"><figcaption>Shot 04.</figcaption></figure>
+    <figure><img src="assets/img/anim-3.jpg" alt="Animation layout of characters tumbling through a street" loading="lazy" decoding="async"><figcaption>Shot 05.</figcaption></figure>
+    <figure><img src="assets/img/anim-4.jpg" alt="Animation layout of a character landing" loading="lazy" decoding="async"><figcaption>Shot 06.</figcaption></figure>
+    <figure><img src="assets/img/tasty-1.jpg" alt="Pink character, still from Almost Tasty" loading="lazy" decoding="async"><figcaption>Almost Tasty_</figcaption></figure>
+    <figure><img src="assets/img/tasty-2.jpg" alt="Still from Almost Tasty" loading="lazy" decoding="async"></figure>
+    <figure><img src="assets/img/tasty-3.jpg" alt="Still from Almost Tasty" loading="lazy" decoding="async"></figure>
+    <figure><img src="assets/img/tasty-4.jpg" alt="Still from Almost Tasty" loading="lazy" decoding="async"></figure>
+  </div>
+  <p class="foot">Stay Creative, Stay Weird<span class="sep">·</span>Deadly Serious Art<span class="sep">·</span>©2026</p>
+</div></section>
+
+<section class="sec" id="sec-goods"><div class="inner">
+  <h2>Goods</h2>
+  <p>Product drops are the way in: things you can wear, hold and hang that carry a piece of the world with them.</p>
+  <ul class="trio">
+    <li><i style="--i:url(assets/img/line-tee.png)"></i><b>Clothing_</b></li>
+    <li><i style="--i:url(assets/img/line-toys.png)"></i><b>Art Toys_</b></li>
+    <li><i style="--i:url(assets/img/line-print.png)"></i><b>Prints_</b></li>
+  </ul>
+  <p>And now and then a few bold, unique items, almost like gallery pieces, to sit alongside the more accessible products.</p>
+  <div class="strip">
+    <figure><img src="assets/img/print.jpg" alt="Print reading Don't waste your life, with characters roasting marshmallows" loading="lazy" decoding="async"><figcaption>Don’t waste your life.</figcaption></figure>
+    <figure><img src="assets/img/figure.jpg" alt="3D printed figure climbing out of a cup" loading="lazy" decoding="async"><figcaption>Art toy test print.</figcaption></figure>
+    <figure><img src="assets/img/ra-2.jpg" alt="Quality Certified sticker" loading="lazy" decoding="async"><figcaption>Quality certified. Kind of tested.</figcaption></figure>
+    <figure><img src="assets/img/tee-1.jpg" alt="T-shirt with the Artist Starter Pack print" loading="lazy" decoding="async"><figcaption>Artist Starter Pack.</figcaption></figure>
+  </div>
+  <p class="foot">Stay Creative, Stay Weird<span class="sep">·</span>Deadly Serious Art<span class="sep">·</span>©2026</p>
+</div></section>
+
+<section class="sec" id="sec-drop"><div class="inner">
+  <h2>Drop I</h2>
+  <p>Stay Creative_ This drop is about the core value of the brand: people who forget about their creative selves as they grow up.</p>
+  <p>The contrast between corporate, “real world” stuff and creativity and playful art. Support your inner artist, wear Colorpoop.</p>
+  <div class="strip">
+    <figure><img src="assets/img/tee-1.jpg" alt="Back of a cream t-shirt with the Artist Starter Pack print" loading="lazy" decoding="async"><figcaption>T-shirt 01_ Artist Starter Pack.</figcaption></figure>
+    <figure><img src="assets/img/art-1.jpg" alt="Artist Starter Pack artwork" loading="lazy" decoding="async"></figure>
+    <figure><img src="assets/img/tee-2.jpg" alt="Back of a white t-shirt with the 3D Windows Windows print" loading="lazy" decoding="async"><figcaption>T-shirt 02_ 3D Windows Windows.</figcaption></figure>
+    <figure><img src="assets/img/art-3.jpg" alt="3D Windows Windows artwork" loading="lazy" decoding="async"></figure>
+    <figure><img src="assets/img/tee-3.jpg" alt="Back of a white t-shirt with the Fridge Art print" loading="lazy" decoding="async"><figcaption>T-shirt 03_ Fridge Art.</figcaption></figure>
+    <figure><img src="assets/img/art-2.jpg" alt="Fridge Art artwork: the coolest tombstone for your artworks" loading="lazy" decoding="async"></figure>
+  </div>
+  <p class="dim">Don’t give up, stay creative.</p>
+  <p class="foot">Stay Creative, Stay Weird<span class="sep">·</span>Deadly Serious Art<span class="sep">·</span>©2026</p>
+</div></section>
+
+<section class="sec" id="sec-ra"><div class="inner">
+  <h2>Ra</h2>
+  <p>Meet Ra. Pink, big-eared, usually in underwear, and the face of Colorpoop.</p>
+  <p>Pop pop premium. Kind of tested. Quality certified.</p>
+  <div class="strip">
+    <figure><img src="assets/img/ra-3.jpg" alt="Ra in a cap and pink overalls" loading="lazy" decoding="async"></figure>
+    <figure><img src="assets/img/ra-2.jpg" alt="Ra giving a thumbs up on a Quality Certified badge" loading="lazy" decoding="async"></figure>
+    <figure><img src="assets/img/ra-4.jpg" alt="Character turnaround sheet for Ra" loading="lazy" decoding="async"><figcaption>Turnaround.</figcaption></figure>
+    <figure><img src="assets/img/ra-1.jpg" alt="Ra eating noodles above a glowing toilet" loading="lazy" decoding="async"></figure>
+    <figure><img src="assets/img/luck.jpg" alt="Ra kneeling with a giant Colorpoop pencil" loading="lazy" decoding="async"><figcaption>Make your own luck.</figcaption></figure>
+  </div>
+  <p class="foot">Stay Creative, Stay Weird<span class="sep">·</span>Deadly Serious Art<span class="sep">·</span>©2026</p>
+</div></section>
+</main>
+
+<script src="main.js"></script>
+</body>
+</html>
