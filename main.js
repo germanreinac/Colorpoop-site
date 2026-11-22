@@ -1,14 +1,14 @@
-/* Colorpoop — particle wordmark, scattered menu, hash-routed sections. No dependencies. */
+/* Colorpoop — a page you can scribble on, a desktop of windows, hash-routed sections. No dependencies. */
 (() => {
   const body = document.body;
   const pc = document.getElementById('pc');
   const film = document.getElementById('film');
+  const pad = document.getElementById('pad');
   const ctx = pc.getContext && pc.getContext('2d');
-  const logoImg = document.querySelector('#logo img');
-  const wordLinks = [...document.querySelectorAll('#words a')];
+  const wins = [...document.querySelectorAll('.win')];
   const lights = document.getElementById('lights');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const SECTIONS = wordLinks.map(a => a.hash.slice(1));
+  const SECTIONS = wins.map(a => a.hash.slice(1));
 
   const PALETTE = {
     dark: ['#ff7fd0', '#b9a3ff', '#8ff0c8', '#ffe36b', '#6f7bff', '#fff4fb'],
@@ -19,23 +19,19 @@
     light: { base: [246, 214, 246], blobs: [[176, 160, 255], [255, 196, 236], [196, 176, 255], [214, 226, 255]], gain: .9 },
   };
 
-  let W = 0, H = 0, DPR = 1, N = 0, M = 0;
-  let X, Y, VX, VY, TX, TY, G, SEED;
-  let state = 'rest', current = null, hover = -1, scrollOff = 0, dustA = .4;
-  let mode = 'dark';
+  let W = 0, H = 0, DPR = 1, N = 0, M = 0, CAP = 0, head = 0;
+  let X, Y, VX, VY, TX, TY, SEED;
+  let state = 'home', current = null, scrollOff = 0, dustA = .4;
+  let mode = 'dark', drawing = false, seeded = false;
   const ptr = { x: -9999, y: -9999 };
 
   try { if (localStorage.getItem('cp-lights') === 'on') setMode('light'); } catch (e) {}
-
-  if (!ctx) { body.classList.add('no-fx'); }
+  if (!ctx) body.classList.add('no-fx');
 
   /* ---------- routing ---------- */
   function route() {
-    const h = location.hash.slice(1);
-    const prev = current;
-    if (SECTIONS.includes(h)) { state = 'sec'; current = h; }
-    else if (h === 'menu') { state = 'menu'; current = null; }
-    else { state = 'rest'; current = null; }
+    const h = location.hash.slice(1), prev = current, was = state;
+    if (SECTIONS.includes(h)) { state = 'sec'; current = h; } else { state = 'home'; current = null; }
     body.dataset.state = state;
     document.querySelectorAll('.sec').forEach(s => {
       const on = s.id === 'sec-' + current;
@@ -46,28 +42,15 @@
       } else s.classList.remove('on', 'in');
     });
     document.title = current ? `${activeSec().querySelector('h2').textContent} — Colorpoop` : 'Colorpoop';
-    hover = -1;
-    retarget();
-    if (state === 'sec') activeSec().focus({ preventScroll: true });
+    if (state === 'sec') { retarget(); activeSec().focus({ preventScroll: true }); }
+    else if (was === 'sec') { release(); seedDoodle(); }
   }
   const activeSec = () => document.getElementById('sec-' + current);
+  const goHome = () => { history.pushState(null, '', location.pathname + location.search); route(); };
 
-  document.getElementById('logo').addEventListener('click', () => { location.hash = 'menu'; });
   addEventListener('hashchange', route);
-  addEventListener('keydown', e => {
-    if (e.key !== 'Escape') return;
-    if (state === 'sec') location.hash = 'menu';
-    else if (state === 'menu') history.pushState(null, '', location.pathname + location.search), route();
-  });
-  document.getElementById('mark').addEventListener('click', e => {
-    if (state === 'menu') { e.preventDefault(); history.pushState(null, '', location.pathname + location.search); route(); }
-  });
-  wordLinks.forEach((a, i) => {
-    a.addEventListener('pointerenter', () => { hover = i; });
-    a.addEventListener('pointerleave', () => { hover = -1; });
-    a.addEventListener('focus', () => { hover = i; });
-    a.addEventListener('blur', () => { hover = -1; });
-  });
+  addEventListener('keydown', e => { if (e.key === 'Escape' && state === 'sec') goHome(); });
+  document.getElementById('mark').addEventListener('click', e => { e.preventDefault(); goHome(); });
   document.querySelectorAll('.sec').forEach(s => {
     s.tabIndex = -1;
     s.style.outline = 'none';
@@ -88,24 +71,51 @@
     drawFilm(performance.now(), true);
   });
 
+  /* ---------- desktop windows: drag them around, click to open ---------- */
+  let topZ = 1;
+  wins.forEach(win => {
+    let down = false, moved = false, sx = 0, sy = 0, ox = 0, oy = 0;
+    win.addEventListener('pointerdown', e => {
+      win.style.zIndex = ++topZ;
+      if (e.pointerType !== 'mouse' || e.button !== 0) return;
+      down = true; moved = false; sx = e.clientX; sy = e.clientY;
+      ox = parseFloat(win.style.getPropertyValue('--dx')) || 0;
+      oy = parseFloat(win.style.getPropertyValue('--dy')) || 0;
+      win.setPointerCapture(e.pointerId);
+    });
+    win.addEventListener('pointermove', e => {
+      if (!down) return;
+      const dx = e.clientX - sx, dy = e.clientY - sy;
+      if (!moved && Math.hypot(dx, dy) < 5) return;
+      moved = true; win.classList.add('drag');
+      win.style.setProperty('--dx', ox + dx + 'px');
+      win.style.setProperty('--dy', oy + dy + 'px');
+    });
+    const end = () => { down = false; win.classList.remove('drag'); };
+    win.addEventListener('pointerup', end);
+    win.addEventListener('pointercancel', end);
+    win.addEventListener('click', e => { if (moved) { e.preventDefault(); moved = false; } });
+    win.addEventListener('dragstart', e => e.preventDefault());
+  });
+
   /* ---------- drag-to-scroll photo strips ---------- */
   document.querySelectorAll('.strip').forEach(strip => {
-    let down = false, sx = 0, sl = 0, moved = false;
+    let down = false, sx = 0, sl = 0;
     strip.addEventListener('pointerdown', e => {
       if (e.pointerType !== 'mouse') return;
-      down = true; moved = false; sx = e.clientX; sl = strip.scrollLeft;
+      down = true; sx = e.clientX; sl = strip.scrollLeft;
     });
     addEventListener('pointermove', e => {
       if (!down) return;
       const dx = e.clientX - sx;
-      if (Math.abs(dx) > 4) { moved = true; strip.classList.add('drag'); }
+      if (Math.abs(dx) > 4) strip.classList.add('drag');
       strip.scrollLeft = sl - dx;
     });
     addEventListener('pointerup', () => { down = false; strip.classList.remove('drag'); });
     strip.addEventListener('dragstart', e => e.preventDefault());
   });
 
-  /* ---------- background film: low-res drifting colour, upscaled into big pixels ---------- */
+  /* ---------- background: low-res drifting colour, upscaled into big pixels ---------- */
   const fctx = film.getContext && film.getContext('2d');
   let lastFilm = 0;
   function sizeFilm() {
@@ -129,7 +139,6 @@
         const c = f.blobs[k];
         r += (c[0] - r) * a; g += (c[1] - g) * a; b += (c[2] - b) * a;
       }
-      // per-cell flicker keeps the mosaic alive, like film noise at a huge scale
       const n = (hash(x * 7 + y * 131 + Math.floor(t / 420) * 17) - .5) * (mode === 'dark' ? 14 : 12);
       const i = (y * w + x) * 4;
       d[i] = r + n; d[i + 1] = g + n; d[i + 2] = b + n; d[i + 3] = 255;
@@ -138,7 +147,7 @@
   }
   function hash(n) { const x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x); }
 
-  /* ---------- particles ---------- */
+  /* ---------- particles: dust that becomes your drawing, then the section title ---------- */
   function resize() {
     sizeFilm(); drawFilm(performance.now(), true);
     if (!ctx) return;
@@ -147,86 +156,121 @@
     pc.width = Math.round(W * DPR); pc.height = Math.round(H * DPR);
     const n = Math.round(Math.min(12000, Math.max(3500, W * H / 95)));
     if (n !== N) {
-      N = n;
+      N = n; CAP = Math.floor(N * .9);
       X = new Float32Array(N); Y = new Float32Array(N); VX = new Float32Array(N); VY = new Float32Array(N);
-      TX = new Float32Array(N); TY = new Float32Array(N); G = new Int16Array(N); SEED = new Float32Array(N);
+      TX = new Float32Array(N); TY = new Float32Array(N); SEED = new Float32Array(N);
       for (let i = 0; i < N; i++) { X[i] = Math.random() * W; Y[i] = Math.random() * H; SEED[i] = Math.random() * 6.283; }
-      M = 0;
+      M = 0; head = 0; seeded = false;
     }
-    retarget();
+    if (state === 'sec') retarget(); else seedDoodle();
   }
 
   function bakeScroll() {
-    if (!ctx || !scrollOff) { scrollOff = 0; return; }
-    for (let i = 0; i < M; i++) Y[i] -= scrollOff;
+    if (ctx && scrollOff) for (let i = 0; i < M; i++) Y[i] -= scrollOff;
     scrollOff = 0;
   }
+
+  /* let go of every particle: the shape bursts back into dust */
+  function release() {
+    if (!ctx) return;
+    bakeScroll();
+    for (let i = 0; i < M; i++) { VX[i] += (Math.random() - .5) * 14; VY[i] += (Math.random() - .5) * 14; }
+    M = 0; head = 0; seeded = false;
+  }
+
+  /* pull dust onto a brush stroke; when the dust runs out, the oldest ink is reused */
+  function ink(x0, y0, x1, y1, r) {
+    if (!ctx || !N) return;
+    const len = Math.hypot(x1 - x0, y1 - y0), n = Math.max(10, Math.round(len * 1.7));
+    for (let k = 0; k < n; k++) {
+      let i;
+      if (M < CAP) i = M++; else { i = head; head = (head + 1) % CAP; }
+      const t = Math.random(), a = Math.random() * 6.283, d = Math.sqrt(Math.random()) * r;
+      TX[i] = x0 + (x1 - x0) * t + Math.cos(a) * d;
+      TY[i] = y0 + (y1 - y0) * t + Math.sin(a) * d;
+      if (reduce) { X[i] = TX[i]; Y[i] = TY[i]; VX[i] = VY[i] = 0; }
+    }
+  }
+  const brush = () => (W < 720 ? 3.5 : 5);
+
+  /* something stupid to start from: a little swirl with eyes */
+  function seedDoodle() {
+    if (!ctx || seeded || state !== 'home' || !N) return;
+    seeded = true;
+    const small = W < 720;
+    const cx = small ? W * .5 : W * .2, by = small ? H * .56 : H * .56, s = small ? Math.min(W, H) * .0011 : Math.min(W, H) * .0013;
+    let px, py;
+    for (let k = 0; k <= 150; k++) {
+      const t = k / 150, a = t * Math.PI * 5.5 + Math.PI, rx = (96 - 84 * t) * s * 1.25;
+      const x = cx + Math.cos(a) * rx, y = by - t * 118 * s + Math.sin(a) * rx * .34;
+      if (k) ink(px, py, x, y, brush() * .8);
+      px = x; py = y;
+    }
+    ink(px, py, px + 16 * s, py - 22 * s, brush() * .7);
+    const ey = by - 4 * s;
+    for (let k = 0; k < 5; k++) {
+      ink(cx - 30 * s, ey, cx - 30 * s, ey + 1, brush() * 1.2);
+      ink(cx + 30 * s, ey, cx + 30 * s, ey + 1, brush() * 1.2);
+    }
+  }
+
+  let lx = 0, ly = 0;
+  pad.addEventListener('pointerdown', e => {
+    if (e.button) return;
+    drawing = true; lx = e.clientX; ly = e.clientY;
+    pad.setPointerCapture(e.pointerId);
+    ink(lx, ly, lx, ly, brush());
+    e.preventDefault();
+  });
+  pad.addEventListener('pointermove', e => {
+    if (!drawing) return;
+    const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+    for (const c of (evs.length ? evs : [e])) { ink(lx, ly, c.clientX, c.clientY, brush()); lx = c.clientX; ly = c.clientY; }
+  });
+  const stop = () => { drawing = false; };
+  pad.addEventListener('pointerup', stop);
+  pad.addEventListener('pointercancel', stop);
+  document.getElementById('flush').addEventListener('click', release);
 
   const off = document.createElement('canvas');
   const octx = off.getContext('2d', { willReadFrequently: true });
 
-  /* Sample the visible shape of each element (image or text) into target points. */
-  function shapePoints(items, step) {
-    const pts = [];
-    items.forEach((it, gi) => {
-      const r = it.el.getBoundingClientRect();
-      if (r.width < 2 || r.height < 2) return;
-      const pad = 6, w = Math.ceil(r.width) + pad * 2, h = Math.ceil(r.height) + pad * 2;
-      off.width = w; off.height = h;
-      octx.clearRect(0, 0, w, h);
-      if (it.el.tagName === 'IMG') {
-        if (!it.el.complete || !it.el.naturalWidth) return;
-        octx.drawImage(it.el, pad, pad, r.width, r.height);
-      } else {
-        const cs = getComputedStyle(it.el);
-        octx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
-        if ('letterSpacing' in octx) octx.letterSpacing = cs.letterSpacing;
-        octx.textBaseline = 'middle';
-        octx.fillStyle = '#fff';
-        octx.fillText(it.el.textContent, pad, pad + r.height / 2 + parseFloat(cs.fontSize) * .04);
-      }
-      let d;
-      try { d = octx.getImageData(0, 0, w, h).data; }
-      catch (e) {
-        // opened straight from disk: the image taints the canvas, so draw the name as text instead
-        const c = document.createElement('canvas'); c.width = w; c.height = h;
-        const x = c.getContext('2d'), fs = r.width / 6.6;
-        x.font = `600 ${fs}px "Space Grotesk", system-ui, sans-serif`;
-        x.textBaseline = 'middle'; x.textAlign = 'center'; x.fillStyle = '#fff';
-        x.fillText((it.el.alt || '').toUpperCase(), w / 2, h / 2, r.width);
-        d = x.getImageData(0, 0, w, h).data;
-      }
-      for (let y = 0; y < h; y += step) for (let x = 0; x < w; x += step) {
-        if (d[((y | 0) * w + (x | 0)) * 4 + 3] > 110) pts.push(r.left - pad + x, r.top - pad + y, gi);
-      }
-    });
+  /* sample a heading's glyphs into target points */
+  function textPoints(el, step) {
+    const pts = [], r = el.getBoundingClientRect();
+    if (r.width < 2 || r.height < 2) return pts;
+    const padPx = 6, w = Math.ceil(r.width) + padPx * 2, h = Math.ceil(r.height) + padPx * 2;
+    off.width = w; off.height = h;
+    const cs = getComputedStyle(el);
+    octx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    if ('letterSpacing' in octx) octx.letterSpacing = cs.letterSpacing;
+    octx.textBaseline = 'middle';
+    octx.fillStyle = '#fff';
+    octx.fillText(el.textContent, padPx, padPx + r.height / 2 + parseFloat(cs.fontSize) * .04);
+    const d = octx.getImageData(0, 0, w, h).data;
+    for (let y = 0; y < h; y += step) for (let x = 0; x < w; x += step) {
+      if (d[((y | 0) * w + (x | 0)) * 4 + 3] > 110) pts.push(r.left - padPx + x, r.top - padPx + y);
+    }
     return pts;
   }
 
+  /* section opened: whatever was drawn rearranges itself into the title */
   function retarget() {
-    if (!ctx || !N) return;
+    if (!ctx || !N || state !== 'sec') return;
     bakeScroll();
-    let items = [];
-    if (state === 'rest') items = [{ el: logoImg }];
-    else if (state === 'menu') items = wordLinks.map(a => ({ el: a.firstElementChild }));
-    else if (current) items = [{ el: activeSec().querySelector('h2') }];
-    let step = state === 'sec' ? 2 : 2.4, pts = shapePoints(items, step);
-    while (pts.length / 3 > N * .9 && step < 8) { step *= 1.15; pts = shapePoints(items, step); }
-    const count = Math.min(pts.length / 3, Math.floor(N * .9));
-    // shuffle so every transition is a fresh scramble
-    const order = new Uint32Array(pts.length / 3);
+    const h2 = activeSec().querySelector('h2');
+    let step = 2, pts = textPoints(h2, step);
+    while (pts.length / 2 > CAP && step < 8) { step *= 1.15; pts = textPoints(h2, step); }
+    const count = Math.min(pts.length / 2, CAP);
+    const order = new Uint32Array(pts.length / 2);
     for (let i = 0; i < order.length; i++) order[i] = i;
     for (let i = order.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; const t = order[i]; order[i] = order[j]; order[j] = t; }
-    const sy = state === 'sec' ? activeSec().scrollTop : 0;
-    for (let i = 0; i < count; i++) {
-      const p = order[i] * 3;
-      TX[i] = pts[p]; TY[i] = pts[p + 1] + sy; G[i] = pts[p + 2];
-    }
-    scrollOff = sy;
+    const sy = activeSec().scrollTop;
+    for (let i = 0; i < count; i++) { const p = order[i] * 2; TX[i] = pts[p]; TY[i] = pts[p + 1] + sy; }
     if (sy) for (let i = 0; i < count; i++) Y[i] += sy;
-    // particles released from a shape get a kick so they drift off as dust
+    scrollOff = sy;
     for (let i = count; i < M; i++) { VX[i] += (Math.random() - .5) * 9; VY[i] += (Math.random() - .5) * 9; }
-    M = count;
+    M = count; head = 0;
     if (reduce) for (let i = 0; i < M; i++) { X[i] = TX[i]; Y[i] = TY[i]; VX[i] = VY[i] = 0; }
   }
 
@@ -237,16 +281,16 @@
     if (!ctx || !N) return;
     const cols = PALETTE[mode], K = cols.length;
     const px = ptr.x, py = ptr.y + scrollOff, R = 86, R2 = R * R;
-    const jit = reduce ? 0 : state === 'sec' ? .26 : W < 720 ? .4 : .55;
+    const jit = reduce ? 0 : state === 'sec' ? .26 : .34;
+    const push = !drawing;
 
     for (let i = 0; i < M; i++) {
-      const hot = G[i] === hover;
-      let vx = (VX[i] + (TX[i] - X[i]) * .055) * .82;
-      let vy = (VY[i] + (TY[i] - Y[i]) * .055) * .82;
-      const j = hot ? jit * 3.2 : jit;
-      vx += (Math.random() - .5) * j; vy += (Math.random() - .5) * j;
-      const dx = X[i] - px, dy = Y[i] - py, d2 = dx * dx + dy * dy;
-      if (d2 < R2 && d2 > .01) { const f = (1 - d2 / R2) * 2.6 / Math.sqrt(d2); vx += dx * f; vy += dy * f; }
+      let vx = (VX[i] + (TX[i] - X[i]) * .055) * .82 + (Math.random() - .5) * jit;
+      let vy = (VY[i] + (TY[i] - Y[i]) * .055) * .82 + (Math.random() - .5) * jit;
+      if (push) {
+        const dx = X[i] - px, dy = Y[i] - py, d2 = dx * dx + dy * dy;
+        if (d2 < R2 && d2 > .01) { const f = (1 - d2 / R2) * 2.6 / Math.sqrt(d2); vx += dx * f; vy += dy * f; }
+      }
       VX[i] = vx; VY[i] = vy; X[i] += vx; Y[i] += vy;
     }
     if (!reduce) {
@@ -292,7 +336,6 @@
   resize();
   route();
   requestAnimationFrame(frame);
-  if (logoImg.complete) retarget(); else logoImg.addEventListener('load', retarget);
   if (document.fonts && document.fonts.ready) {
     Promise.all([document.fonts.load('500 80px "Space Grotesk"'), document.fonts.ready]).then(retarget, retarget);
   }
