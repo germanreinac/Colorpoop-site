@@ -49,6 +49,44 @@
     s.addEventListener('scroll', () => { if (s.id === 'sec-' + current) scrollOff = s.scrollTop; }, { passive: true });
   });
 
+  /* ---------- sticker artwork: each link becomes a little printed badge ---------- */
+  function edge(kind) {
+    const wave = { ring: [0, 0], scallop: [14, 4.2], 'scallop-fine': [26, 2.4], burst: [22, 5.5], 'burst-soft': [14, 6] }[kind] || [0, 0];
+    const [n, amp] = wave, tri = kind.startsWith('burst');
+    let d = '';
+    for (let k = 0; k < 360; k++) {
+      const t = k / 360 * Math.PI * 2, ph = (k / 360 * n) % 1;
+      const w = tri ? 1 - 4 * Math.abs(ph - .5) : Math.cos(ph * Math.PI * 2);
+      const r = 96 - amp + amp * w;
+      d += (k ? 'L' : 'M') + (100 + Math.cos(t) * r).toFixed(2) + ' ' + (100 + Math.sin(t) * r).toFixed(2);
+    }
+    return d + 'Z';
+  }
+  const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  stickers.forEach((el, i) => {
+    const name = el.querySelector('.cap').textContent, src = el.querySelector('img').getAttribute('src');
+    const { sub = '', shape = 'ring', fill = '#fff' } = el.dataset;
+    const no = String(i + 1).padStart(2, '0');
+    const inner = shape === 'ring' ? 88 : shape === 'burst' ? 82 : shape === 'burst-soft' ? 80 : 84;
+    el.setAttribute('aria-label', name.replace('_', ''));
+    el.innerHTML = `<svg viewBox="0 0 200 200" aria-hidden="true">
+      <defs>
+        <clipPath id="clip${i}"><circle cx="100" cy="100" r="55"/></clipPath>
+        <path id="top${i}" d="M 34 100 A 66 66 0 0 1 166 100"/>
+        <path id="bot${i}" d="M ${100 - inner + 4} 100 A ${inner - 4} ${inner - 4} 0 0 0 ${100 + inner - 4} 100"/>
+      </defs>
+      <path class="seal" d="${edge(shape)}" fill="${fill}"/>
+      ${shape === 'ring' ? '<circle class="hair dash" cx="100" cy="100" r="91"/>' : ''}
+      <circle cx="100" cy="100" r="57.5" fill="#fff" stroke="var(--blue)" stroke-width="2.2"/>
+      <image href="${src}" x="45" y="45" width="110" height="110" preserveAspectRatio="xMidYMid slice" clip-path="url(#clip${i})"/>
+      <g class="spin">
+        <text class="name" text-anchor="middle"><textPath href="#top${i}" startOffset="50%">${esc(name)}</textPath></text>
+        <text class="sub" text-anchor="middle"><textPath href="#bot${i}" startOffset="50%">N°${no} · ${esc(sub)}</textPath></text>
+        <path class="plus" d="M 22 100 h 8 M 26 96 v 8 M 170 100 h 8 M 174 96 v 8"/>
+      </g>
+    </svg>`;
+  });
+
   /* ---------- the menu: stickers that fall in, pile up, and can be grabbed and thrown ---------- */
   const SIZE = [1.25, 1.05, .9, 1, .82];
   const bodies = stickers.map((el, i) => ({ el, i, x: 0, y: 0, vx: 0, vy: 0, a: 0, va: 0, r: 60, held: false, floor: false }));
