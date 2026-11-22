@@ -109,6 +109,9 @@ body[data-state="sec"] #home{display:none}
   display:block;width:62px;height:40px;background:var(--accent);
   -webkit-mask:url(assets/img/mark.png) center/contain no-repeat;mask:url(assets/img/mark.png) center/contain no-repeat;
 }
+/* an older cached page has no inner span: draw the icon on the link itself so it never goes missing */
+#mark:empty{width:62px;height:40px;padding:0;border-radius:0;background:var(--accent) !important;box-shadow:none !important;
+  -webkit-mask:url(assets/img/mark.png) center/contain no-repeat;mask:url(assets/img/mark.png) center/contain no-repeat}
 body[data-state="sec"] #mark{opacity:1;pointer-events:auto}
 @media (hover:hover){#mark:hover{transform:rotate(-8deg) scale(1.08)}}
 
