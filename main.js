@@ -7,7 +7,12 @@
   const ctx = pc.getContext && pc.getContext('2d');
   const stickers = [...document.querySelectorAll('.stk')];
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const SECTIONS = stickers.map(a => a.hash.slice(1));
+  // every <section class="sec"> is a route, whether or not it has a sticker on the home screen
+  const SECTIONS = [...document.querySelectorAll('.sec')].map(s => s.id.replace('sec-', ''));
+
+  /* Waiting list. Paste the form endpoint of the email tool here once one is chosen
+     (it must accept a POST with an "email" field and answer with JSON). Empty = not connected. */
+  const WAITLIST_ENDPOINT = '';
 
   const COLORS = ['#1c27e6', '#2330f0', '#3a45ff', '#1c27e6', '#ff4fc0', '#2330f0'];
   const FILM = { base: [246, 214, 246], blobs: [[176, 160, 255], [255, 196, 236], [196, 176, 255], [214, 226, 255]], gain: .9 };
@@ -162,6 +167,24 @@
     // pointer taps are handled above; only keyboard activation goes through click
     el.addEventListener('click', e => { if (physics && e.detail !== 0) e.preventDefault(); });
     el.addEventListener('dragstart', e => e.preventDefault());
+  });
+
+  /* ---------- waiting list ---------- */
+  const waitForm = document.getElementById('wait-form'), waitStatus = document.getElementById('wait-status');
+  if (waitForm) waitForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const email = waitForm.email.value.trim(), btn = waitForm.querySelector('button');
+    if (waitForm.company.value) return; // bots fill the hidden field
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { waitStatus.textContent = 'That email looks off. Try again?'; waitForm.email.focus(); return; }
+    if (!WAITLIST_ENDPOINT) { waitStatus.textContent = 'The list is not connected yet, so nothing was saved.'; return; }
+    btn.disabled = true; waitStatus.textContent = 'Adding you…';
+    try {
+      const res = await fetch(WAITLIST_ENDPOINT, { method: 'POST', headers: { Accept: 'application/json' }, body: new FormData(waitForm) });
+      if (!res.ok) throw new Error(res.status);
+      waitForm.reset(); waitStatus.textContent = 'You are on the list. Stay weird.';
+    } catch (err) {
+      waitStatus.textContent = 'That did not go through. Please try again in a bit.';
+    } finally { btn.disabled = false; }
   });
 
   /* ---------- drag-to-scroll photo strips ---------- */
