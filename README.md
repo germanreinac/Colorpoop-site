@@ -19,7 +19,8 @@ Then open http://localhost:8000.
 
 - Add a section: add an `<a class="stk solid">` or `<a class="stk line">` inside `#pile` (copy an existing one; the image is a 1-bit blue PNG), a matching `<section class="sec" id="sec-name">`, and a size for it in `SIZE` in `main.js`.
 - Swap images: replace files in `assets/img/` or edit the `<figure>` entries in a `.strip`.
-- Not yet wired up: social links, contact email and a shop / mailing list.
+- Shop preview: lives at `#shop` and is not linked from the home menu. Its waiting list form does nothing until `WAITLIST_ENDPOINT` in `main.js` is set to an email tool's form endpoint.
+- Not yet wired up: social links and contact email.
 
 ## Deploy
 
